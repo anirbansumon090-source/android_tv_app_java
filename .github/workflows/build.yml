@@ -3,7 +3,6 @@ name: Android CI/CD Build System
 on:
   push:
     branches: [ "main" ]
-  # ম্যানুয়ালি বিল্ড সিলেক্ট করার অপশন
   workflow_dispatch:
     inputs:
       build_type:
@@ -29,36 +28,40 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # C++ বিল্ডের জন্য NDK এবং CMake
       - name: Setup Android NDK & CMake
         run: |
           echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;25.1.8937393" "cmake;3.22.1"
 
-      # Google Services JSON জেনারেট (যদি সিক্রেটস সেট করা থাকে)
+      # Google Services JSON ফিক্সড সেটআপ
       - name: Setup Google Services
         if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > app/google-services.json
+        run: |
+          mkdir -p app
+          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
 
       - name: Grant Gradle Permission
         run: chmod +x gradlew
 
-      # বিল্ড লজিক (ইনপুট অনুযায়ী কাজ করবে)
+      # বিল্ড লজিক ফিক্সড
       - name: Run Build
         run: |
-          if [ "${{ github.event.inputs.build_type || 'debug' }}" == "debug" ]; then
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          echo "Building: $BUILD_TYPE"
+          
+          if [ "$BUILD_TYPE" == "debug" ]; then
             ./gradlew :app:assembleDebug
-          elif [ "${{ github.event.inputs.build_type }}" == "release" ]; then
+          elif [ "$BUILD_TYPE" == "release" ]; then
             ./gradlew :app:assembleRelease
           else
             ./gradlew :app:bundleRelease
           fi
 
-      # আউটপুট ফাইল আপলোড করা
+      # আউটপুট ফাইল আপলোড (পাথ চেক করা হয়েছে)
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-outputs
           path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/apk/debug/
+            app/build/outputs/apk/release/
+            app/build/outputs/bundle/release/

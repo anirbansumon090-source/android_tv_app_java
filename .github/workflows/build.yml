@@ -32,8 +32,12 @@ jobs:
 
       - name: Prepare Build Environment
         run: |
+          # গ্রেডল ভার্সন ৯.৩.১ সেটআপ
           gradle wrapper --gradle-version 9.3.1
           chmod +x gradlew
+          
+          # ডামি ডিবাগ কি-স্টোর তৈরি (প্যাকেজিং এরর সমাধানের জন্য)
+          keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Setup Android NDK & CMake
         run: |
@@ -52,8 +56,7 @@ jobs:
           echo "Building: $BUILD_TYPE"
           
           if [ "$BUILD_TYPE" == "debug" ]; then
-            # -x validateSigningDebug যোগ করা হয়েছে যাতে Keystore না থাকলেও বিল্ড হয়
-            ./gradlew :app:assembleDebug -x validateSigningDebug
+            ./gradlew :app:assembleDebug
           elif [ "$BUILD_TYPE" == "release" ]; then
             ./gradlew :app:assembleRelease
           else

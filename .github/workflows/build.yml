@@ -18,6 +18,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -32,17 +34,17 @@ jobs:
         run: |
           echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;25.1.8937393" "cmake;3.22.1"
 
-      # Google Services JSON ফিক্সড সেটআপ
+      # Google Services JSON এরর ফিক্সড
       - name: Setup Google Services
-        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+        if: env.GOOGLE_JSON_CONTENT != ''
         run: |
           mkdir -p app
-          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+          echo "$GOOGLE_JSON_CONTENT" > app/google-services.json
 
       - name: Grant Gradle Permission
         run: chmod +x gradlew
 
-      # বিল্ড লজিক ফিক্সড
+      # বিল্ড লজিক
       - name: Run Build
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
@@ -56,7 +58,7 @@ jobs:
             ./gradlew :app:bundleRelease
           fi
 
-      # আউটপুট ফাইল আপলোড (পাথ চেক করা হয়েছে)
+      # আউটপুট ফাইল আপলোড
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:

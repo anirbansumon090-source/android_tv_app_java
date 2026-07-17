@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'বিল্ড টাইপ সিলেক্ট করুন'
+        description: 'বিল্ড টাইপ সিলেক্ট করুন (debug/release/bundle)'
         required: true
         default: 'debug'
         type: choice
@@ -30,7 +30,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # গ্রেডল ফাইল না থাকলে জেনারেট করা
       - name: Prepare Build Environment
         run: |
           gradle wrapper --gradle-version 9.3.1
@@ -50,8 +49,11 @@ jobs:
       - name: Run Build
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          echo "Building: $BUILD_TYPE"
+          
           if [ "$BUILD_TYPE" == "debug" ]; then
-            ./gradlew :app:assembleDebug
+            # -x validateSigningDebug যোগ করা হয়েছে যাতে Keystore না থাকলেও বিল্ড হয়
+            ./gradlew :app:assembleDebug -x validateSigningDebug
           elif [ "$BUILD_TYPE" == "release" ]; then
             ./gradlew :app:assembleRelease
           else

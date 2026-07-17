@@ -29,7 +29,7 @@ class AppRepository(private val appDao: AppDao) {
                     id = 101,
                     name = "বিটিভি (BTV)",
                     category = "বাংলাদেশি",
-                    url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    url = "https://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8?ref=developerinsider.co",
                     description = "গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের রাষ্ট্রীয় টেলিভিশন সংস্থা।"
                 ),
                 ChannelEntity(

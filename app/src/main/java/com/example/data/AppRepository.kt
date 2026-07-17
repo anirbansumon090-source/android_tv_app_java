@@ -36,7 +36,7 @@ class AppRepository(private val appDao: AppDao) {
                     id = 102,
                     name = "সময় টিভি (Somoy TV)",
                     category = "বাংলাদেশি",
-                    url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                    url = "https://skynewsau-live.akamaized.net/hls/live/2002689/skynewsau-extra1/master.m3u8?ref=developerinsider.co",
                     description = "বাংলাদেশের ২৪ ঘণ্টার একটি শীর্ষস্থানীয় সংবাদভিত্তিক স্যাটেলাইট টেলিভিশন চ্যানেল।"
                 ),
                 ChannelEntity(

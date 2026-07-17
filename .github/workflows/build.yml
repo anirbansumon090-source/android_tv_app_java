@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'বিল্ড টাইপ সিলেক্ট করুন (debug/release/bundle)'
+        description: 'বিল্ড টাইপ সিলেক্ট করুন'
         required: true
         default: 'debug'
         type: choice
@@ -30,28 +30,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # এনডিকে এবং সিমেক সেটআপ (ফিক্সড পাথ)
+      # গ্রেডল ফাইল না থাকলে জেনারেট করা
+      - name: Prepare Build Environment
+        run: |
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+
       - name: Setup Android NDK & CMake
         run: |
           export SDKMANAGER=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
           yes | $SDKMANAGER "ndk;25.1.8937393" "cmake;3.22.1"
 
-      # গুগল সার্ভিসেস ফাইল সেটআপ (ফিক্সড সিক্রেট হ্যান্ডলিং)
       - name: Setup Google Services
         if: env.GOOGLE_JSON_CONTENT != ''
         run: |
           mkdir -p app
           echo "$GOOGLE_JSON_CONTENT" > app/google-services.json
 
-      - name: Grant Gradle Permission
-        run: chmod +x gradlew
-
-      # বিল্ড লজিক (ইনপুট অনুযায়ী)
       - name: Run Build
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
-          echo "Building: $BUILD_TYPE"
-          
           if [ "$BUILD_TYPE" == "debug" ]; then
             ./gradlew :app:assembleDebug
           elif [ "$BUILD_TYPE" == "release" ]; then
@@ -60,7 +58,6 @@ jobs:
             ./gradlew :app:bundleRelease
           fi
 
-      # আউটপুট ফাইল আপলোড
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:

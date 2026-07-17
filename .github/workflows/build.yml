@@ -30,11 +30,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # এনডিকে এবং সিমেক সেটআপ (ফিক্সড পাথ)
       - name: Setup Android NDK & CMake
         run: |
-          echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;25.1.8937393" "cmake;3.22.1"
+          export SDKMANAGER=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+          yes | $SDKMANAGER "ndk;25.1.8937393" "cmake;3.22.1"
 
-      # Google Services JSON এরর ফিক্সড
+      # গুগল সার্ভিসেস ফাইল সেটআপ (ফিক্সড সিক্রেট হ্যান্ডলিং)
       - name: Setup Google Services
         if: env.GOOGLE_JSON_CONTENT != ''
         run: |
@@ -44,7 +46,7 @@ jobs:
       - name: Grant Gradle Permission
         run: chmod +x gradlew
 
-      # বিল্ড লজিক
+      # বিল্ড লজিক (ইনপুট অনুযায়ী)
       - name: Run Build
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"

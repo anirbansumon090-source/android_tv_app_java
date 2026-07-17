@@ -1,0 +1,6 @@
+{
+  "name": "Smart TV Live",
+  "description": "একটি আধুনিক এবং পলিশড অ্যান্ড্রয়েড স্মার্ট টিভি অ্যাপ্লিকেশন যা রিমোট D-pad কন্ট্রোল সাপোর্ট এবং উন্নত চ্যানেল প্লেয়ার ফিচার প্রদান করে।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -33,7 +33,7 @@ jobs:
       # গ্রেডল ফাইল না থাকলে জেনারেট করা
       - name: Prepare Build Environment
         run: |
-          gradle wrapper --gradle-version 8.5
+          gradle wrapper --gradle-version 9.3.1
           chmod +x gradlew
 
       - name: Setup Android NDK & CMake

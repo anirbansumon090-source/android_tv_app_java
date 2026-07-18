@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="140dp"
+    android:layout_margin="6dp"
+    android:focusable="true"
+    android:clickable="true"
+    android:background="@drawable/bg_focusable_card">
+
+    <!-- Card Content Wrapper -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp">
+
+        <!-- Channel Logo -->
+        <ImageView
+            android:id="@+id/img_channel_logo"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_tv"
+            android:tint="#33FFFFFF"
+            android:contentDescription="Channel Logo" />
+
+        <!-- Live Badge -->
+        <TextView
+            android:id="@+id/txt_live_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:background="#4ADE80"
+            android:textColor="#121212"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="1dp"
+            android:text="LIVE"
+            android:visibility="visible" />
+
+        <!-- Info Overlay (At the bottom) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical">
+
+            <!-- Channel Number -->
+            <TextView
+                android:id="@+id/txt_channel_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CH 101"
+                android:textColor="#66FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <!-- Channel Name -->
+            <TextView
+                android:id="@+id/txt_channel_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="সময় নিউজ"
+                android:textColor="#E6E1E5"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </RelativeLayout>
+</FrameLayout>

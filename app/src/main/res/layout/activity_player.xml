@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/player_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Media3 Player View -->
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/player_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="false"
+        android:clickable="false" />
+
+    <!-- Left Side Quick Channels List Drawer (Hidden by default, opens with D-pad Left) -->
+    <LinearLayout
+        android:id="@+id/drawer_channels"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="left"
+        android:background="#E6121212"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="দ্রুত চ্যানেল পরিবর্তন"
+            android:textColor="#D0BCFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_drawer_channels"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="vertical" />
+    </LinearLayout>
+
+    <!-- Bottom Info Panel Overlay (Shows temporarily on channel tune or pressing OK) -->
+    <LinearLayout
+        android:id="@+id/overlay_info_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#CC1C1B1F"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:visibility="visible">
+
+        <!-- Channel Logo in player screen -->
+        <ImageView
+            android:id="@+id/img_player_logo"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_tv"
+            android:tint="#88FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txt_player_channel_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CH 101"
+                android:textColor="#D0BCFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txt_player_channel_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="সময় নিউজ"
+                android:textColor="#E6E1E5"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txt_player_channel_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="লাইভ নিউজ স্ট্রিমিং চব্বিশ ঘণ্টা"
+                android:textColor="#CAC4D0"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#4ADE80"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:text="এখন চলছে"
+            android:textColor="#121212"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Direct Numeric Entry Indicator Overlay -->
+    <FrameLayout
+        android:id="@+id/overlay_number_input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="#E61C1B1F"
+        android:paddingHorizontal="40dp"
+        android:paddingVertical="24dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="চ্যানেল নম্বর চাপুন"
+                android:textColor="#CAC4D0"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/txt_typed_numbers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="1 0"
+                android:textColor="#D0BCFF"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

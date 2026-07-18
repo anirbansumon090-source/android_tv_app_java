@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import android.net.Uri
 import android.view.ViewGroup
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
@@ -26,27 +27,60 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+
+private enum class StreamType { HLS, DASH, PROGRESSIVE }
+
+private fun resolveStreamType(url: String): StreamType {
+    val path = runCatching { Uri.parse(url).path.orEmpty() }.getOrDefault("")
+    val lower = (path + "?" + url.substringAfter('?', "")).lowercase()
+    return when {
+        lower.contains(".m3u8") || lower.contains("m3u8") -> StreamType.HLS
+        lower.contains(".mpd") || lower.contains("mpd") -> StreamType.DASH
+        else -> StreamType.HLS
+    }
+}
+
+@OptIn(UnstableApi::class)
+private fun buildMediaSource(
+    videoUrl: String,
+    dataSourceFactory: DefaultHttpDataSource.Factory
+): MediaSource {
+    val mediaItem = MediaItem.fromUri(videoUrl)
+    return when (resolveStreamType(videoUrl)) {
+        StreamType.HLS -> HlsMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
+        StreamType.DASH -> DashMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
+        StreamType.PROGRESSIVE -> ProgressiveMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
+    }
+}
 
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier,
-    isMuted: Boolean = false
+    isMuted: Boolean = false,
+    headers: Map<String, String> = emptyMap()
 ) {
     val context = LocalContext.current
     var isBuffering by remember { mutableStateOf(true) }
     var playbackError by remember { mutableStateOf<String?>(null) }
 
-    // Initialize ExoPlayer
     val exoPlayer = remember {
         ExoPlayer.Builder(context)
             .setSeekParameters(androidx.media3.exoplayer.SeekParameters.CLOSEST_SYNC)
             .build().apply {
-                repeatMode = Player.REPEAT_MODE_ONE // For infinite channel loops
+                repeatMode = Player.REPEAT_MODE_ONE
                 playWhenReady = true
                 if (isMuted) {
                     volume = 0f
@@ -54,7 +88,6 @@ fun VideoPlayer(
             }
     }
 
-    // Set up Player listener
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
@@ -76,19 +109,22 @@ fun VideoPlayer(
         }
     }
 
-    // Update MediaItem when videoUrl changes
     LaunchedEffect(videoUrl) {
         playbackError = null
         isBuffering = true
         try {
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUrl)
-                .build()
-            exoPlayer.setMediaItem(mediaItem)
+            val dataSourceFactory = DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(15_000)
+                .setReadTimeoutMs(15_000)
+                .apply { if (headers.isNotEmpty()) setDefaultRequestProperties(headers) }
+
+            val mediaSource = buildMediaSource(videoUrl, dataSourceFactory)
+            exoPlayer.setMediaSource(mediaSource)
             exoPlayer.prepare()
             exoPlayer.play()
         } catch (e: Exception) {
-            playbackError = "ইউআরএল লোড করা সম্ভব হয়নি"
+            playbackError = "ইউআরএল লোড করা সম্ভব হয়নি"
             isBuffering = false
         }
     }
@@ -98,8 +134,8 @@ fun VideoPlayer(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
-                    useController = false // No overlay controller
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM // TV Fill screen
+                    useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -109,7 +145,6 @@ fun VideoPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Buffering Indicator
         if (isBuffering) {
             Box(
                 modifier = Modifier
@@ -125,7 +160,6 @@ fun VideoPlayer(
             }
         }
 
-        // Error message overlay
         if (playbackError != null) {
             Box(
                 modifier = Modifier

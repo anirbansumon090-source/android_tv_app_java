@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Many free IPTV / live-TV stream sources are served over plain http://
+        (no TLS). Android 9+ (API 28+) blocks cleartext traffic by default,
+        so without this config, any http:// channel URL would fail to connect
+        with a CleartextNotPermittedException.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

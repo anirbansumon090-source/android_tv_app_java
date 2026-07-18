@@ -1,0 +1,96 @@
+name: Android CI/CD Build System
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'বিল্ড টাইপ সিলেক্ট করুন (debug/release/bundle)'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+        - debug
+        - release
+        - bundle
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Prepare Build Environment
+        run: |
+          # গ্রেডল ওয়্যাপার তৈরি (রিপোতে gradlew কমিট করা নেই)
+          gradle wrapper --gradle-version 9.3.1
+          chmod +x gradlew
+
+          # ডামি ডিবাগ কি-স্টোর তৈরি (debug বিল্ডের জন্য)
+          keytool -genkey -v -keystore debug.keystore -alias androiddebugkey \
+            -storepass android -keypass android -keyalg RSA -keysize 2048 \
+            -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Prepare Release Signing
+        run: |
+          # release/bundle বিল্ডের জন্য signingConfigs.release -কে KEYSTORE_PATH /
+          # STORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD এনভায়রনমেন্ট ভেরিয়েবল লাগে
+          # (app/build.gradle.kts দেখুন) - এটাই আগে সেট করা ছিল না, তাই শুধু debug
+          # বিল্ড হতো, release/bundle keystore-not-found দিয়ে ফেইল করত।
+          #
+          # আসল প্রোডাকশন কি-স্টোর ব্যবহার করতে নিচের সিক্রেটগুলো রিপোতে যোগ করুন
+          # (Settings -> Secrets and variables -> Actions):
+          #   RELEASE_KEYSTORE_BASE64   -> `base64 -w0 my-upload-key.jks` এর আউটপুট
+          #   RELEASE_KEYSTORE_PASSWORD -> কি-স্টোর পাসওয়ার্ড
+          #   RELEASE_KEY_ALIAS         -> কি অ্যালিয়াস (ডিফল্ট "upload")
+          #   RELEASE_KEY_PASSWORD      -> কি পাসওয়ার্ড
+          # এই সিক্রেট না থাকলে release/bundle বিল্ড debug কি-স্টোর দিয়েই সাইন হবে,
+          # যা শুধু CI টেস্টের জন্য ঠিক আছে - আসল Play Store রিলিজের জন্য না।
+          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "Using real release keystore from repository secrets."
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+            echo "KEYSTORE_PATH=$(pwd)/release.keystore" >> "$GITHUB_ENV"
+            echo "STORE_PASSWORD=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS || 'upload' }}" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+          else
+            echo "::warning::RELEASE_KEYSTORE_BASE64 secret পাওয়া যায়নি - release/bundle বিল্ড ডিবাগ কি-স্টোর দিয়ে সাইন করা হচ্ছে (শুধু CI ভেরিফিকেশনের জন্য, আসল রিলিজের জন্য না)।"
+            echo "KEYSTORE_PATH=$(pwd)/debug.keystore" >> "$GITHUB_ENV"
+            echo "STORE_PASSWORD=android" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=androiddebugkey" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=android" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run Build
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          echo "Building: $BUILD_TYPE"
+
+          if [ "$BUILD_TYPE" == "debug" ]; then
+            # এখানেই app/build.gradle.kts-এর splits{abi{...}} কনফিগ অনুযায়ী প্রতিটা
+            # ABI-র (armeabi-v7a/arm64-v8a/x86/x86_64) জন্য আলাদা APK + একটা universal
+            # APK তৈরি হবে (একটা ফ্যাট APK এর বদলে)।
+            ./gradlew :app:assembleDebug
+          elif [ "$BUILD_TYPE" == "release" ]; then
+            ./gradlew :app:assembleRelease
+          else
+            # App Bundle (.aab) নিজেই Play Feature Delivery দিয়ে per-device ডেলিভারি
+            # হ্যান্ডেল করে, তাই এখানে ABI split প্রযোজ্য না - সবসময় একটাই .aab হবে।
+            ./gradlew :app:bundleRelease
+          fi
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs-${{ github.event.inputs.build_type || 'debug' }}
+          path: |
+            app/build/outputs/apk/debug/
+            app/build/outputs/apk/release/
+            app/build/outputs/bundle/release/
+          if-no-files-found: ignore

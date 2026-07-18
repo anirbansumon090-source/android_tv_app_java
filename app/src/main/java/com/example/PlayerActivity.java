@@ -16,7 +16,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,11 +31,13 @@ import com.example.model.Channel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class PlayerActivity extends AppCompatActivity {
 
     private PlayerView playerView;
     private ExoPlayer player;
+    private DefaultHttpDataSource.Factory httpDataSourceFactory;
 
     private View drawerChannels;
     private RecyclerView recyclerDrawerChannels;
@@ -80,8 +85,23 @@ public class PlayerActivity extends AppCompatActivity {
         drawerAdapter = new DrawerAdapter();
         recyclerDrawerChannels.setAdapter(drawerAdapter);
 
-        // Initialize ExoPlayer
-        player = new ExoPlayer.Builder(this).build();
+        // Initialize ExoPlayer with an explicit MediaSourceFactory.
+        // allowCrossProtocolRedirects(true) matters a lot for IPTV: many free
+        // stream sources redirect http -> https (or the reverse) via their CDN,
+        // and ExoPlayer's default HTTP data source refuses that redirect unless
+        // this is turned on, causing an otherwise-valid stream to fail to load.
+        httpDataSourceFactory = new DefaultHttpDataSource.Factory()
+                .setUserAgent("SmartTVLive/1.0 (Linux;Android) ExoPlayerLib/media3")
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(15000)
+                .setReadTimeoutMs(15000);
+        DefaultDataSource.Factory dataSourceFactory =
+                new DefaultDataSource.Factory(this, httpDataSourceFactory);
+        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(dataSourceFactory);
+
+        player = new ExoPlayer.Builder(this)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build();
         playerView.setPlayer(player);
 
         int channelId = getIntent().getIntExtra("channel_id", -1);
@@ -118,6 +138,14 @@ public class PlayerActivity extends AppCompatActivity {
     private void playChannel(Channel channel) {
         if (channel == null || player == null) return;
         currentChannel = channel;
+
+        // Apply this channel's custom HTTP headers (Referer/User-Agent/Cookie/token/etc.)
+        // before creating the media source. Many protected or anti-hotlink stream sources
+        // reject playback (403/blocked) unless the exact expected headers are sent.
+        // setDefaultRequestProperties only affects HttpDataSource instances created
+        // AFTER this call, so it must run right before player.prepare() for each channel.
+        Map<String, String> channelHeaders = channel.getHeaders();
+        httpDataSourceFactory.setDefaultRequestProperties(channelHeaders);
 
         // Start video streaming using Media3 ExoPlayer.
         // The MIME type is detected explicitly so that HLS (.m3u8) and DASH (.mpd)

@@ -30,3 +30,31 @@ The live player is built on **AndroidX Media3 ExoPlayer** and supports:
 `MediaItem` is built with an explicit MIME type hint so playlists that don't end in
 `.m3u8`/`.mpd` (common with IPTV links that carry query strings/tokens) still resolve to
 the correct HLS/DASH media source instead of falling through to the progressive extractor.
+
+### Network / security
+- `network_security_config.xml` permits cleartext (`http://`) traffic, since many free
+  IPTV sources aren't served over TLS.
+- The player's `DefaultHttpDataSource.Factory` allows cross-protocol redirects
+  (http ⇄ https), since many stream CDNs redirect between the two.
+
+### Custom per-channel HTTP headers
+Some protected/anti-hotlink stream sources reject playback unless specific headers
+(`Referer`, `Origin`, `User-Agent`, `Cookie`, an auth token, etc.) are sent with every
+request. `Channel` supports this via a headers map that's applied right before that
+channel starts playing:
+
+```java
+Map<String, String> headers = new HashMap<>();
+headers.put("Referer", "https://example.com/");
+headers.put("Origin", "https://example.com");
+headers.put("User-Agent", "Mozilla/5.0 ...");
+
+Channel channel = new Channel(
+        "Channel Name", "Category", "https://example.com/live/index.m3u8",
+        "https://example.com/logo.png", "Description", 108, headers);
+```
+
+The headers are stored as a JSON string on the `Channel` row (no extra Room
+`TypeConverter` needed) and are pushed onto the `DefaultHttpDataSource.Factory` in
+`PlayerActivity.playChannel()` right before `player.prepare()`, so every HTTP
+request for that channel's manifest/segments carries them.

@@ -21,7 +21,7 @@ android {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
       storeFile = file(keystorePath)
       storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
+      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
       keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
@@ -40,6 +40,19 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
+  }
+
+  // Produces separate per-ABI APKs (armeabi-v7a / arm64-v8a / x86 / x86_64) in addition
+  // to one universal APK, instead of a single fat APK. Only applies to `assemble*` tasks
+  // (direct APK output) - `bundleRelease` (.aab) already handles per-device delivery on
+  // its own via Play Feature Delivery, so it ignores this block.
+  splits {
+    abi {
+      isEnable = true
+      reset()
+      include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+      isUniversalApk = true
+    }
   }
 
   compileOptions {

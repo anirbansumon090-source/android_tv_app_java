@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.example.model.Channel;
 import com.example.model.Setting;
 
-@Database(entities = {Channel.class, Setting.class}, version = 1, exportSchema = false)
+@Database(entities = {Channel.class, Setting.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;
 
